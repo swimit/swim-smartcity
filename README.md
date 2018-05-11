@@ -11,7 +11,7 @@ A real-time view of traffic conditions in the city of Palo Alto.
 # Run
 
 ## Run the application
-Execute the command `gradle run` from a shell pointed to the application's home directory. This will start the Swim plane.
+Execute the command `gradle run` from a shell pointed to the application's home directory. This will start the Swim server on port 9001.
    ```console
     user@machine:~$ gradle run
    ```
