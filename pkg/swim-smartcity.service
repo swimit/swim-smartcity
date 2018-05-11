@@ -1,0 +1,13 @@
+  [Unit]
+Description=SWIM SmartCity
+Wants=network.target
+
+[Service]
+EnvironmentFile=-/etc/sysconfig/swim-smartcity
+ExecStart=/opt/swim-smartcity/bin/swim-smartcity
+User=swim-smartcity
+Restart=on-failure
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

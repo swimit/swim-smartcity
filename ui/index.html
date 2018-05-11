@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>SmartCity | SWIM</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link rel="icon" type="image/png" href="assets/favicon.png" />
+    <link href="https://api.tiles.mapbox.com/mapbox-gl-js/v0.43.0/mapbox-gl.css" rel="stylesheet"/>
+    <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v0.43.0/mapbox-gl.js"></script>
+    <script src="https://apis.google.com/js/platform.js"></script>
+    <script src="assets/swim-app.min.js" swim-app></script>
+
+    <style>
+      html, body {
+        display: flex;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        font-family: Lato, sans-serif;
+        font-size: 12px;
+        color: #4a4a4a;
+      }
+      
+      * {
+        margin: 0px;
+        padding: 0px;
+      }
+      .logoContainer {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        width: 500px;
+        height: 51px;
+        display: flex;
+        flex-direction: row;
+      }
+      .logoContainer h4 {
+        font-size: 48px;
+        font-weight: 300;
+        margin-top: 18px;
+      }
+      .powered-by-swim-ai {
+        position: absolute;
+        bottom: 35px;
+        left: 12px;
+        width: 142px;
+        height: 46px;
+        object-fit: contain;
+      }
+      .trafficware-logo {
+        margin: 12px 16px;
+        height: 51px;
+        width: 182px;
+      }
+      #title {
+        position: absolute;
+        top: 4px;
+        left: 12px;
+        margin: 0;
+        font-size: 36px;
+        font-weight: 400;
+        color: #3d484e;
+        pointer-events: none;
+      }
+      small {
+        font-size: 14px;
+        font-weight: 300;
+        margin-left: 0px;
+      }
+      #main {
+        display: flex;
+        flex-grow: 1;
+        position: relative;
+      }
+      .subheaderNavigation {
+        position: absolute;
+        left: 15px;
+        top: 76px;
+        display: flex;
+        flex-direction: row;
+      }
+      .subheaderButton {
+        border-radius: 5px;
+        background-color: rgb(53, 61, 72);
+        color: white;
+        padding: 4px 15px;
+        font-size: 12px;
+        margin: 0px 8px 0 0;
+        font-weight: normal;
+      }
+      .trafficLightPopover {
+        color: white;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+      }
+      .trafficLightColumns {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+      }
+      .trafficLightTree {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+      }
+      .trafficLightPhaseCharts {
+        width: 224px;
+        height: 300px;
+        overflow-x: auto;
+      }
+      .chartTitle {
+        width: 100%;
+        font-weight: 300;
+      }
+      .chartContainer {
+        width: 100%;
+        height: 60px;
+      }
+      .trafficLightCircle {
+        border-radius: 50%;
+        flex-grow: 0;
+        width: 97px;
+        height: 97px;
+        margin: 5px auto;
+        display: flex;
+        align-items: center;
+      }
+      .trafficLightCircleLabel {
+        text-align: center;
+        width: 100%;
+      }
+      .placardHeader {
+        display: flex;
+        flex-direction: row;
+        margin: 3px 0px;
+      }
+      .placardSubheader {
+        display: flex;
+        flex-direction: row;
+        margin: 11px 0px 11px 0px;
+      }
+      .placardSubheaderItem {
+        border-radius: 8px;
+        background-color: #4171b8;
+        width: 50px;
+        height: 15px;
+        text-align: center;
+        line-height: 15px;
+        font-size: 9px;
+        margin: 0px 8px 0 0;
+        color: #000000;
+      }
+      .placardLabel {
+        font-size: 12px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        flex-grow: 1;
+        padding-left: 10px;
+      }
+      .ledIcon {
+        width: 29px;
+        height: 29px;
+        display: flex;
+        align-items: center;
+        border-radius: 50%;
+      }
+      .ledLabel {
+        width: 100%;
+        text-align: center;
+        color: white;
+      }
+    
+    </style>    
+  </head>
+
+  <body>
+
+    <script type="text/recon">
+      #############################
+      # begin main body
+      @div {
+        id: 'main'
+        style: {
+          display: flex
+          flex-grow: 1
+        }
+
+        #######################
+        # begin map board
+        @board {
+          id: board
+
+          host: 'swim://traffic.swim.services'
+          #host: 'swims://trafficware.swim.services?key=ab21cfe05ba-7d43-69b2-0aef-94d9d54b6f65'
+
+          intersections: @link(node: '/city/PaloAlto_CA_US', lane: 'intersections', type: map)
+
+          primaryColor: '#18cae6'
+
+          phaseColor: {
+            1: '#e82727' # red
+            2: '#e6d827' # yellow
+            3: '#27e833' # green
+          }
+
+          detectorOpacity: {
+            0: 0.15 # vacant
+            1: 1 # occupied
+          }
+
+          radiusInterpolator: @let($interpolate(1, 30))
+          latencyColor: @let($interpolate('#B1D2E4', '#456678'))
+
+          crosswalks: @mutable {}
+          approaches: @mutable {}
+
+          surface: @mapboxMap {
+            accessToken: 'pk.eyJ1Ijoic3dpbWl0IiwiYSI6ImNqY2c3NXZkYzFoa2QycXQ1eXl1Mnd6M3EifQ.qpRE7xC08AyZfxJ56LoN7w'
+            style: 'mapbox://styles/swimit/cis528ecx0024gom3a8ycxyga'
+            center: {lng: -122.1635, lat: 37.4445}
+            pitch: 60
+            zoom: 18
+
+            #######################
+            # create a mapbox layer which will be used to draw the approaches
+            @mapboxLayer {
+              sealed: true
+              type: fill
+              zoomRange: {16, 24}
+              fillColor: phaseColor
+              fillOpacity: detectorOpacity
+
+              @each(intersectionUri: $intersections.*:) {
+                key: $intersectionUri
+
+                @mapboxLayer {
+                  node: $intersectionUri
+
+                  intersection: @let($intersections.($intersectionUri))
+                  schematic: @link(lane: 'intersection/schematic', type: value)
+                  phases: @link(lane: 'phase/state', type: map)
+                  detectors: @link(lane: 'detector/state', type: map)
+
+                  @each(approach: $schematic.*[$@approach]) {
+                    key: {$intersectionUri, $approach.id}
+
+                    @mapboxPolygon {
+                      phaseState: @let($phases.($approach.phase))
+                      detectorState: @let($detectors.($approach.detector))
+
+                      coordinates: $approach.coords
+                      properties: {
+                        phaseColor: $phaseColor.($phaseState) || '#ff6e80'
+                        detectorOpacity: $detectorOpacity.($detectorState) || 0.6
+                      }
+
+                      @inject($approaches) {
+                        {$intersectionUri, $approach.id}: {
+                          phase: $phaseState
+                          detector: $detectorState
+                        }
+                      }   
+
+                      click: {
+                        #######################
+                        # begin approach hover popover
+                        popover: @mapboxPopover {
+                          phaseEvents: @link(lane: 'phase/event', type: map)
+                          latencies: @link(lane: 'intersection/latency', type: value)
+                          latency: @let($abs($latencies.tsg - $latencies.tm) || 0)
+                          mode: @link(lane: 'intersection/mode', type: value)
+
+                          isRed: @let($phaseState == 1)
+                          isYellow: @let($phaseState == 2)
+                          isGreen: @let($phaseState == 3)
+
+                          backgroundColor: 'rgb(53, 61, 72)'
+                          popoverWidth: '240px'
+                          popoverHeight: '432px'
+
+                          body: @placard {
+                            nextPhaseEvent: @let($phaseEvents.($approach.phase))
+                            nextPhase: @let($nextPhaseEvent.st)
+                            countdown: $max(0, $nextPhaseEvent.clk - $now())
+
+                            body: @div(class: trafficLightPopover) {
+                              @div(class: placardHeader) {
+                                style: {
+                                  display: 'flex'
+                                  flex-direction: 'row'
+                                }
+                                @div(class: ledIcon) {
+                                  style: {
+                                    background-color: '#4171b8'
+                                  }
+                                  @h3(class: ledLabel) {
+                                    @text($eager($approach.phase+1))
+                                  }
+                                }
+                                @h2(class: placardLabel) {
+                                  @text($eager($intersection.name))
+                                }
+                                @div(class: ledIcon) {
+                                  @style {
+                                    background-color: '#4d6069'
+                                  }
+                                  @h3(class: ledLabel) {
+                                    @text($eager($intersection.id))
+                                  }
+                                }
+                              }
+                              @div(class: placardSubheader) {
+                                @div(class: placardSubheaderItem) {
+                                  transition: @transition(1000, linear)
+                                  @text([{$round($eager($latency))}ms])
+                                }
+                                @div(class: placardSubheaderItem) {
+                                  @text($eager($mode.coord))
+                                }
+                              }
+                              @div(class: trafficLightColumns) {
+                                # restate the model each second, aligned to the skew of the countdown
+                                @tick($max(16, 1000 - $countdown % 1000))
+
+                                @div(class: trafficLightTree) {
+                                  @div(class: trafficLightCircle) {
+                                    @style {
+                                      background-color: @rgba(232, 39, 39, $isRed ? 1 : 0.15)
+                                    }
+                                    @h1(class: trafficLightCircleLabel) {
+                                      @text($eager($isRed ? $round($countdown / 1000) : ''))
+                                    }
+                                  }
+                                  @div(class: trafficLightCircle) {
+                                    @style {
+                                      background-color: @rgba(230, 216, 39, $isYellow ? 1 : 0.15)
+                                    }
+                                    @h1(class: trafficLightCircleLabel) {
+                                      @text($eager($isYellow ? $round($countdown / 1000) : ''))
+                                    }
+                                  }
+                                  @div(class: trafficLightCircle) {
+                                    @style {
+                                      background-color: @rgba(39, 232, 51, $isGreen ? 1 : 0.15)
+                                    }
+                                    @h1(class: trafficLightCircleLabel) {
+                                      @text($eager($isGreen ? $round($countdown / 1000) : ''))
+                                    }
+                                  }
+                                }
+                              }
+                              @each(detector: $approach.detector) {
+                                key: $detector
+                                @div(class: ledIcon) {
+                                  style: {
+                                    background-color: '#4171b8'
+                                    position: 'absolute'
+                                    bottom: '0px'
+                                    right: '0px'
+                                  }
+                                  @h3(class: ledLabel) {
+                                    @text($eager($detector))
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        } # end popover
+                      } # end click
+
+                      #click: {
+                      #  flyTo: {
+                      #    zoom: 18
+                      #  }
+                      #} # end click
+                    }
+                  }
+                }
+              }
+            }
+
+            #############################
+            # create a mapbox layer which will hold all the intersection dots
+            @mapboxLayer {
+              sealed: true
+              type: circle
+              circleColor: color
+              circleOpacity: 0.8
+              circleRadius: radius
+
+              @each(intersectionUri: $intersections.*:) {
+                key: $intersectionUri
+
+                @mapboxLayer {
+                  node: $intersectionUri
+
+                  intersection: @let($intersections.($intersectionUri))
+                  schematic: @link(lane: 'intersection/schematic', type: value)
+                  phases: @link(lane: 'phase/state', type: map)
+                  detectors: @link(lane: 'detector/state', type: map)
+                  pedCalls: @link(lane: 'pedCall', type: value)
+                  pointRadius: @let($radiusInterpolator($pow($zoom, 3) / $pow(24, 3)))
+
+                  @mapboxPoint {
+                    coordinates: {lng: $intersection.lng, lat: $intersection.lat}
+                    phaseState: @let($phases.($approach))
+                    detectorState: @let($detectors.($approach.detector))
+                    pedCallState: @let($pedCalls#0)
+
+                    properties: {
+                      radius: $pointRadius
+                      color: $pedCallState == 1 ? 'rgba(90,184,255,1)' : '#acdafe'
+                    }
+
+                    @inject($crosswalks) {
+                      $intersectionUri: {
+                        pedCall: $pedCallState
+                      }
+                    }
+
+                    click: {
+                      #############################
+                      # begin intersection popover
+                      popover: @mapboxPopover {
+                        scans: @link(lane: 'scan/state', type: value)
+                        latencies: @link(lane: 'intersection/latency', type: value)
+                        latency: @let($abs($latencies.tsg - $latencies.tm) || 0)
+                        mode: @link(lane: 'intersection/mode', type: value)
+
+                        backgroundColor: 'rgb(53, 61, 72)'
+                        popoverWidth: '240px'
+                        popoverHeight: '432px'
+
+                        body: @placard {
+
+                          body: @div(class: trafficLightPopover) {
+                            @div(class: placardHeader) {
+                              style: {
+                                display: flex
+                                flex-direction: row
+                              }
+                              @div(class: ledIcon) {
+                                @style {
+                                  background-color: '#4171b8'
+                                }
+                                @h3(class: ledLabel) {
+                                  style: {
+                                    padding-top: '2px'
+                                  }
+                                  @img(src:'assets/images/swim-logo-bug-nobg.svg', height: '22px')
+                                }
+                              }
+                              @h2(class: placardLabel) {
+                                @text($eager($intersection.name))
+                              }
+                              @div(class: ledIcon) {
+                                @style {
+                                  background-color: '#4d6069'
+                                }
+                                @h3(class: ledLabel) {
+                                  @text($eager($intersection.id))
+                                }
+                              }
+                            }
+                            @div(class: placardSubheader) {
+                              @div(class: placardSubheaderItem) {
+                                transition: @transition(1000, linear)
+                                @text([{$round($eager($latency))}ms])
+                              }
+                              @div(class: placardSubheaderItem) {
+                                @text($eager($mode.coord))
+                              }
+                            }
+                            @div(class: trafficLightPhaseCharts) {
+                              history: @link(lane: 'intersection/history', type: map)
+                              future: @link(lane: 'intersection/future', type: map)
+
+                              @each(phaseId: $phases.*:) {
+                                key: $phaseId
+
+                                #############################
+                                # begin phase line chart
+                                @h3(class: chartTitle) {
+                                  @text([Phase {$phaseId}])
+                                }
+                                @div(class: chartContainer) {
+                                  @chart {
+                                    @plot(type: area) {
+                                      areaFill: @rgba(239, 239, 239, 0.2)
+                                      @each(t: $future.*:) {
+                                        key: $t
+                                        @plotPoint {
+                                          sample: @let($future.($t))
+                                          phaseSample: @let($sample.signalPhases.($phaseId))
+                                          prediction: $phaseSample.red || 0
+                                          clamped: $round($prediction)
+                                          x: $t
+                                          y: $prediction
+                                          dy: $prediction + ($clamped - $prediction)
+                                        }
+                                      }
+                                    }
+                                    @plot(type: line) {
+                                      lineDashArray: {4, 2}
+                                      lineColor: @rgba(239, 239, 239, 0.25)
+                                      @each(t: $future.*:) {
+                                        key: $t
+                                        @plotPoint {
+                                          sample: @let($future.($t))
+                                          phaseSample: @let($sample.signalPhases.($phaseId))
+                                          x: $t
+                                          y: $phaseSample.red || 0
+                                        }
+                                      }
+                                    }
+                                    @plot(type: line) {
+                                      lineColor: @rgba(239, 239, 239, 0.25)
+                                      @each(t: $future.*:) {
+                                        key: $t
+                                        @plotPoint {
+                                          sample: @let($future.($t))
+                                          phaseSample: @let($sample.signalPhases.($phaseId))
+                                          x: $t
+                                          y: $round($phaseSample.red || 0)
+                                        }
+                                      }
+                                    }
+                                    @plot(type: line) {
+                                      lineColor: @rgba(239, 239, 239, 1)
+                                      lineWidth: '2px'
+                                      @each(t: $history.*:) {
+                                        key: $t
+                                        @plotPoint {
+                                          sample: @let($history.($t))
+                                          phaseSample: @let($sample.signalPhases.($phaseId))
+                                          x: $t
+                                          y: $phaseSample.red || 0
+                                        }
+                                      }
+                                    }
+
+                                    top: {
+                                      gutter: '5px'
+                                    }
+                                    right: {
+                                      gutter: '10px'
+                                    }
+                                    bottom: @axis(type: time) {
+                                      gutter: '20px'
+                                      domainColor: '#989898'
+                                      domainWidth: 0
+                                      domainSerif: 0
+                                      tickMarkLength: 0
+                                      tickLabelColor: '#989898'
+                                    }
+                                    left: @axis(type: linear) {
+                                      hidden: true
+                                      gutter: '10px'
+                                    }
+                                  }
+                                }
+                                # end phase line chart
+                                #############################
+                              }
+                            }
+                            @each(phaseId: $phases.*:) {
+                              key: $phaseId
+                              @div(class: ledIcon) {
+                                style: {
+                                  background-color: '#5ab8ff'
+                                  position: 'absolute'
+                                  bottom: '0px'
+                                  right: '0px'
+                                }
+                                @h3(class: ledLabel) {
+                                  @style {
+                                    color: 'black'
+                                  }
+                                  @text($phaseId)
+                                }
+                              }
+                            }
+                          } # end div
+                        } #end placard
+                      } #end intersection popover
+                    } # end click
+
+                    #click: {
+                    #  flyTo: {
+                    #    zoom: 18
+                    #  }
+                    #} # end click
+
+                  } #end mappoint
+                } # end layer
+              } # end each
+            }
+          }
+
+          # define what appears inside the right totam sidebar
+          right: @totem {
+            spacing: '10px'
+            desiredWidth: '20%'
+            minVisibleWidth: '200px'
+            redLabelColor: #000000 # @let($contrast('#ff6e80'))
+            yellowLabelColor: #000000 #@let($contrast('#f9f087'))
+            greenLabelColor: #000000 # @let($contrast('#b8e986'))
+            blueLabelColor: #000000 # @let($contrast('#5ab8ff'))
+
+            @tile {
+              backgroundColor: 'rgba(255, 255, 255, 0.6)'
+              body: @div {
+                style: {
+                  position: relative
+                  display: flex
+                  width: '100%'
+                  height: '100%'                  
+                }
+              
+              @div(class: timer) {
+                style: {
+                  position: absolute
+                  top: '-8px'
+                  right: '110%'
+                  text-align: right
+                  font-size: '12px'
+                  width: '100%'
+                }
+                @script(type:'text/javascript') {
+                  [timer()]
+                }
+              }
+
+              @pie {
+                transition: @transition(1000, linear)
+                title: 'Red'
+                occupiedCount: @let($count($approaches.**[$phase == 1 && $detector == 1]) || 0)
+                vacantCount: @let($count($approaches.**[$phase == 1 && $detector == 0]) || 0)
+                labelColor: $redLabelColor
+                tickColor: '#B7B7B7'
+                legendColor: '#989898'
+                @wedge {
+                  value: $occupiedCount
+                  label: @text($round($value))
+                  legend: 'Waiting'
+                  innerRadius: 10 + 7.5 * $value / $max($value) @pct
+                  outerRadius: 20 + 7.5 * $value / $max($value) @pct
+                  arcColor: 'rgba(232, 39, 39, 0.9)'
+                }
+                @wedge {
+                  value: $vacantCount
+                  label: @text($round($value))
+                  legend: 'Clear'
+                  innerRadius: 10 + 7.5 * $value / $max($value) @pct
+                  outerRadius: 20 + 7.5 * $value / $max($value) @pct
+                  arcColor: 'rgba(232, 39, 39, 0.25)'
+                }
+              }
+              }
+            }
+
+            @tile {
+              backgroundColor: 'rgba(255,255,255,0.6)'
+              body: @pie {
+                transition: @transition(1000, linear)
+                title: 'Green'
+                occupiedCount: @let($count($approaches.**[$phase == 3 && $detector == 1]) || 0)
+                vacantCount: @let($count($approaches.**[$phase == 3 && $detector == 0]) || 0)
+                labelColor: $greenLabelColor
+                tickColor: '#B7B7B7'
+                legendColor: '#989898'
+                @wedge {
+                  value: $occupiedCount
+                  label: @text($round($value))
+                  legend: 'Flowing'
+                  innerRadius: 10 + 7.5 * $value / $max($value) @pct
+                  outerRadius: 20 + 7.5 * $value / $max($value) @pct
+                  arcColor: 'rgb(39, 232, 51, 0.9)'
+                }
+                @wedge {
+                  value: $vacantCount
+                  label: @text($round($value))
+                  legend: 'Clear'
+                  innerRadius: 10 + 7.5 * $value / $max($value) @pct
+                  outerRadius: 20 + 7.5 * $value / $max($value) @pct
+                  arcColor: 'rgb(39, 232, 51, 0.25)'
+                }
+              }
+            } #end tile
+
+            @tile {
+              backgroundColor: 'rgba(255,255,255,0.6)'
+              body: @pie {
+                transition: @transition(1000, linear)
+                title: 'Pedestrians'
+                occupiedCount: @let($count($crosswalks.**[$pedCall == 1]) || 0)
+                vacantCount: @let($count($crosswalks.**[$pedCall == 0]) || 0)
+                labelColor: $blueLabelColor
+                tickColor: '#B7B7B7'
+                legendColor: '#989898'
+                @wedge {
+                  value: $occupiedCount
+                  label: @text($round($value))
+                  legend: 'Waiting'
+                  innerRadius: 10 + 7.5 * $value / $max($value) @pct
+                  outerRadius: 20 + 7.5 * $value / $max($value) @pct
+                  arcColor: 'rgba(90,184,255,0.5)'
+                }
+                @wedge {
+                  value: $vacantCount
+                  label: @text($round($value))
+                  legend: 'Clear'
+                  innerRadius: 10 + 7.5 * $value / $max($value) @pct
+                  outerRadius: 20 + 7.5 * $value / $max($value) @pct
+                  arcColor: 'rgba(90,184,255,0.25)'
+                }
+              }
+            } # end tile
+          } # end totem
+        } # end board
+        # end map board
+        #######################
+
+        #############################
+        # top logo
+        @div(class: 'logoContainer') {
+          @a(href: "https://www.swim.ai") {
+            @img(
+              class: trafficware-logo
+              src: 'assets/images/swim-logo-blue.svg'
+            )
+          }
+          @h4 [Smart City]
+        } #end logo container
+
+        #######################
+        # subheader nav bar
+        @div(class: subheaderNavigation) {
+          @div(class: subheaderButton) 'CA'
+          @div(class: subheaderButton) 'Palo Alto'
+        } # end subheaderNavigation
+
+        #######################
+        # powered by swim footer logo
+        @img(
+          class: powered-by-swim-ai
+          src: 'assets/images/swim-ai-powered-by.png',
+          srcset: 'assets/images/swim-ai-powered-by@2x.png 2x,assets/images/swim-ai-powered-by@3x.png 3x'
+        )
+      } #end div
+      # end main body
+      #######################
+    </script>
+
+    <script type="text/javascript">
+      function timer() {
+        const elem = document.querySelector('.timer');
+        setInterval(function() {
+          const date = new Date(); // your logic string for date
+          const locale = date.toLocaleString();
+          elem.innerText = locale;
+        }, 1000)
+        
+      }
+    </script>
+    
+  </body>
+</html>

@@ -1,0 +1,96 @@
+buildscript {
+    repositories {
+      maven { url 'https://plugins.gradle.org/m2/' }
+    }
+  dependencies {
+    classpath 'com.netflix.nebula:gradle-ospackage-plugin:4.3.0'
+  }
+}
+
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: 'nebula.ospackage-application'
+apply plugin: 'maven'
+
+group = 'ai.swim'
+description = "Real-time PaloAlto Traffic App"
+sourceCompatibility = 1.8
+
+repositories {
+  maven {
+    url 'https://repo.swim.it/swim-academy/'
+    credentials {
+      username "swim-academy"
+      password "academy-swim"
+    }
+    authentication {
+      digest(BasicAuthentication)
+    }
+  }
+}
+
+configurations.all {
+  resolutionStrategy {
+    cacheChangingModulesFor 3600, 'seconds'
+  }
+}
+
+dependencies {
+  compile 'ai.swim:swim-server-client:1.2.0.20180404071514'
+}
+
+configurations {
+  testCompile.exclude group: 'ai.swim:swim-server'
+}
+
+compileJava {
+  options.compilerArgs += ['-Xlint']
+}
+
+javadoc {
+  options.charSet = 'UTF-8'
+}
+
+task runMain(type: JavaExec) {
+  main = mainClassName
+  systemProperties System.properties
+}
+
+mainClassName = 'it.swim.traffic.TrafficPlane'
+
+ospackage {
+  release '1'
+  prefix '/opt/swim-smartcity'
+}
+
+task packageDeb(type: Deb) {
+  maintainer = 'chris@swim.it'
+
+  configurationFile("/etc/sysconfig/${project.name}")
+  preInstall "addgroup --quiet --system ${project.name}"
+  preInstall "adduser --quiet --system --ingroup ${project.name} --no-create-home --disabled-password ${project.name}"
+  postInstall "systemctl preset ${project.name} > /dev/null 2>&1"
+  postInstall "systemctl start ${project.name} > /dev/null 2>&1"
+  preUninstall  "systemctl disable ${project.name} > /dev/null 2>&1"
+  preUninstall  "systemctl stop ${project.name} > /dev/null 2>&1"
+  postUninstall "systemctl daemon-reload > /dev/null 2>&1"
+
+  from('pkg') {
+    into '/etc/systemd/system'
+    include '*.service'
+    addParentDirs false
+    expand project.properties
+    user 'root'
+    permissionGroup 'root'
+    fileMode = 0644
+  }
+
+  from('pkg') {
+    into '/etc/sysconfig'
+    include "${project.name}"
+    user 'root'
+    permissionGroup 'root'
+    fileMode = 0644
+    fileType CONFIG | NOREPLACE
+  }
+}

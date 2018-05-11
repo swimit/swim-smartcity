@@ -1,0 +1,15 @@
+@server {
+  @plane("traffic") {
+    class: "it.swim.traffic.TrafficPlane"
+  }
+  @store {
+    path: "/tmp/swim/"
+  }
+  @http(port: 9001) {
+    plane: "traffic"
+    @websocket {
+      serverCompressionLevel: 0# -1 = default; 0 = off; 1-9 = deflate level
+      clientCompressionLevel: 0# -1 = default; 0 = off; 1-9 = deflate level
+    }
+  }
+}
