@@ -1,4 +1,4 @@
-  [Unit]
+[Unit]
 Description=SWIM SmartCity
 Wants=network.target
 
