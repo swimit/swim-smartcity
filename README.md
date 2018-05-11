@@ -6,14 +6,12 @@ A real-time view of traffic conditions in the city of Palo Alto.
 
 * Install [JDK 8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html). Ensure that your JAVA_HOME environment variable is pointed to the Java 8 installation location. Ensure that your PATH includes $JAVA_HOME.
 
-* Install [Gradle](https://gradle.org/install/). Ensure that your PATH includes the Gradle `bin` directory.
-
 # Run
 
 ## Run the application
-Execute the command `gradle run` from a shell pointed to the application's home directory. This will start the Swim server on port 9001.
+Execute the command `./gradlew run` from a shell pointed to the application's home directory. This will start the Swim server on port 9001.
    ```console
-    user@machine:~$ gradle run
+    user@machine:~$ ./gradlew run
    ```
 
 ## Run the UI
