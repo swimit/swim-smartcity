@@ -241,48 +241,38 @@ public class IntersectionService extends AbstractService {
   }
 
   void didUpdateRemoteScan(Value value) {
-    //System.out.println(nodeUri().toUri() + " didUpdateRemoteScan: " + value.toRecon());
     if (value instanceof Record) {
       final Record state = (Record) value;
       final Record mode = Record.empty(3);
       final long clk = state.get("clk").longValue(0L);
-      for (int i = 0, n = state.length(); i < n; i += 1) {
-        final Item item = state.get(i);
-        if (item instanceof Slot) {
-          final String key = item.getKey().stringValue();
-          if ("pattern".equals(key) || "coord".equals(key) || "preempt".equals(key)) {
-            mode.add(item);
-          }
-        } else if (item instanceof Record) {
-          final Record scans = (Record) item;
-          for (int j = 0, m = scans.length(); j < m; j += 1) {
-            final Item scan = scans.get(j);
-            final Value st = scan.get("st");
-            if (st instanceof Number) {
-              final Value p = scan.get("p");
-              if (p.isDefined()) {
-                didUpdateRemoteSignalPhase(p.intValue(), st.intValue(), clk);
-                continue;
-              }
-              final Value d = scan.get("d");
-              if (d.isDefined()) {
-                didUpdateRemoteVehicleDetector(d.intValue(), st.intValue(), clk);
-                continue;
-              }
-              final Value pp = scan.get("pp");
-              if (pp.isDefined()) {
-                didUpdateRemotePedPhase(pp.intValue(), st.intValue(), clk);
-                continue;
-              }
-              final Value pc = scan.get("pc");
-              if (pc.isDefined()) {
-                didUpdateRemotePedCall(pc.intValue(), st.intValue(), clk);
-                continue;
-              }
-            }
-          }
-        }
+
+      final String key = state.getKey().stringValue();
+      if ("pattern".equals(key) || "coord".equals(key) || "preempt".equals(key)) {
+        mode.add(state);
       }
+      final Value st = state.get("st");
+
+      final Value p = state.get("p");
+      if (p.isDefined()) {
+        didUpdateRemoteSignalPhase(p.intValue(), st.intValue(), clk);
+      }
+
+      final Value d = state.get("d");
+      if (d.isDefined()) {
+        didUpdateRemoteVehicleDetector(d.intValue(), st.intValue(), clk);
+      }
+
+      final Value pp = state.get("pp");
+      if (pp.isDefined()) {
+        didUpdateRemotePedPhase(pp.intValue(), st.intValue(), clk);
+      }
+
+      final Value pc = state.get("pc");
+      if (pc.isDefined()) {
+        didUpdateRemotePedCall(pc.intValue(), st.intValue(), clk);
+      }
+
+
       if (!this.mode.get().equals(mode)) {
         this.mode.set(mode);
       }
