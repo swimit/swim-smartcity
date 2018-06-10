@@ -243,13 +243,8 @@ public class IntersectionService extends AbstractService {
   void didUpdateRemoteScan(Value value) {
     if (value instanceof Record) {
       final Record state = (Record) value;
-      final Record mode = Record.empty(3);
       final long clk = state.get("clk").longValue(0L);
 
-      final String key = state.getKey().stringValue();
-      if ("pattern".equals(key) || "coord".equals(key) || "preempt".equals(key)) {
-        mode.add(state);
-      }
       final Value st = state.get("st");
 
       final Value p = state.get("p");
@@ -272,9 +267,9 @@ public class IntersectionService extends AbstractService {
         didUpdateRemotePedCall(pc.intValue(), st.intValue(), clk);
       }
 
-
-      if (!this.mode.get().equals(mode)) {
-        this.mode.set(mode);
+      final String coord = state.get("coord").stringValue("");
+      if (!this.mode.get().get("coord").stringValue("").equals(coord)) {
+        this.mode.set(Record.empty().withSlot("coord", coord));
       }
       lastScanTime = System.currentTimeMillis();
     }

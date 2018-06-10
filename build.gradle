@@ -1,20 +1,24 @@
 buildscript {
-    repositories {
-      maven { url 'https://plugins.gradle.org/m2/' }
-    }
+  repositories {
+    maven { url 'https://plugins.gradle.org/m2/' }
+  }
   dependencies {
     classpath 'com.netflix.nebula:gradle-ospackage-plugin:4.3.0'
+  }
+  dependencies {
+    classpath "gradle.plugin.com.github.alexeylisyutenko:windows-service-plugin:1.1.0"
   }
 }
 
 apply plugin: 'java'
 apply plugin: 'application'
 apply plugin: 'nebula.ospackage-application'
-apply plugin: 'maven'
+apply plugin: "com.github.alexeylisyutenko.windows-service-plugin"
 
 group = 'ai.swim'
 description = "Real-time PaloAlto Traffic App"
 sourceCompatibility = 1.8
+version = project.property("application.version")
 
 repositories {
   maven {
@@ -86,4 +90,20 @@ task packageDeb(type: Deb) {
     fileMode = 0644
     fileType CONFIG | NOREPLACE
   }
+}
+
+windowsService {
+  architecture = 'amd64'
+  displayName = 'Swim SmartCity'
+  description = 'Swim SmartCity'
+  startClass = 'it.swim.traffic.TrafficPlane'
+  startMethod = 'main'
+  stopClass = 'it.swim.traffic.TrafficPlane'
+  stopMethod = 'main'
+  startup = 'auto'
+  windowsService.jvmOptions='-Xms4096m;-Xmx4096m'
+  logPath = '%SystemRoot%\\System32\\LogFiles\\Swim\\SmartCity'
+  logPrefix = 'app'
+  stdOutput = 'server-out'
+  stdError = 'server-err'
 }
