@@ -1,18 +1,20 @@
 package it.swim.traffic.service;
 
+import it.swim.traffic.model.IntersectionTensor;
+import it.swim.traffic.model.SignalPhaseEvent;
+import it.swim.traffic.model.SignalPhaseModel;
+import it.swim.traffic.model.SignalPhaseTensor;
+import it.swim.traffic.model.VehicleDetectorEvent;
+import it.swim.traffic.model.VehicleDetectorTensor;
+import recon.Form;
+import recon.Record;
+import recon.Value;
 import swim.api.AbstractService;
 import swim.api.EventDownlink;
 import swim.api.MapLane;
 import swim.api.SwimLane;
 import swim.api.ValueLane;
 import swim.concurrent.TimerRef;
-import recon.Form;
-import recon.Item;
-import recon.Number;
-import recon.Record;
-import recon.Slot;
-import recon.Value;
-import it.swim.traffic.model.*;
 import swim.util.HashTrieMap;
 import swim.util.HashTrieSet;
 import swim.util.Uri;
@@ -61,9 +63,6 @@ public class IntersectionService extends AbstractService {
       .didUpdate(this::didUpdateSignalPhase);
 
   void didUpdateSignalPhase(Integer phaseId, Integer newPhase, Integer oldPhase) {
-    //if (ENABLED.contains(nodeUri())) {
-    //  System.out.println(nodeUri().toUri() + " didUpdateSignalPhase " + phaseId + ": " + newPhase);
-    //}
     updateSignalPhaseTensor(phaseId, newPhase, oldPhase, System.currentTimeMillis());
   }
 
@@ -121,7 +120,6 @@ public class IntersectionService extends AbstractService {
     for (Integer state : pedCallState.values()) {
       st = Math.max(st, state);
     }
-    //System.out.println(nodeUri().toUri() + " pedCall st: " + st);
     pedCall.set(st);
   }
 
@@ -137,9 +135,6 @@ public class IntersectionService extends AbstractService {
         final Integer state = signalPhaseState.get(phaseId);
         updateSignalPhaseTensor(phaseId, state, state, t);
       }
-      //if (ENABLED.contains(nodeUri())) {
-      //  System.out.println(nodeUri().toUri() + " intersection tensor: " + intersectionTensor.toValue().toRecon());
-      //}
       intersectionHistory.put(t, intersectionTensor);
       try {
         while (intersectionHistory.size() > SAMPLE_COUNT + 1) {
@@ -288,19 +283,15 @@ public class IntersectionService extends AbstractService {
     }
     final boolean modelChanged = model.updateState(st, clk);
     if (modelChanged && model.hasCycled() && !ENABLED.contains(nodeUri())) {
-      //System.out.println(nodeUri().toUri() + " didUpdateRemoteSignalPhase p: " + p + "; st: " + st + "; cycleTime: " + model.cycleTime() + "ms; cycleDeviation: " + model.cycleDeviation());
       if (model.isPredictable()) {
         final long t13 = model.nextRedToGreen();
         final long t32 = model.nextGreenToYellow();
         final long t21 = model.nextYellowToRed();
         if (t13 < t32 && t13 < t21) {
-          //System.out.println(nodeUri().toUri() + " signal phase " + p + " to state 3 in " + (Math.abs(Math.round(t13 - System.currentTimeMillis())) / 1000) + " seconds");
           signalPhaseEvents.put(p, new SignalPhaseEvent(t13, 3));
         } else if (t32 < t21 && t32 < t13) {
-          //System.out.println(nodeUri().toUri() + " signal phase " + p + " to state 2 in " + (Math.abs(Math.round(t32 - System.currentTimeMillis())) / 1000) + " seconds");
           signalPhaseEvents.put(p, new SignalPhaseEvent(t32, 2));
         } else if (t21 < t13 && t21 < t32) {
-          //System.out.println(nodeUri().toUri() + " signal phase " + p + " to state 1 in " + (Math.abs(Math.round(t21 - System.currentTimeMillis())) / 1000) + " seconds");
           signalPhaseEvents.put(p, new SignalPhaseEvent(t21, 1));
         }
       } else if (model.isUnpredictable()) {
@@ -310,17 +301,14 @@ public class IntersectionService extends AbstractService {
   }
 
   void didUpdateRemoteVehicleDetector(int d, int st, long clk) {
-    //System.out.println(nodeUri().toUri() + " didUpdateRemoteVehicleDetector d: " + d + "; st: " + st);
     vehicleDetectorState.put(d, st);
   }
 
   void didUpdateRemotePedPhase(int pp, int st, long clk) {
-    //System.out.println(nodeUri().toUri() + " didUpdateRemotePedPhase pp: " + pp + "; st: " + st);
     pedPhaseState.put(pp, st);
   }
 
   void didUpdateRemotePedCall(int pc, int st, long clk) {
-    //System.out.println(nodeUri().toUri() + " didUpdateRemotePedCall pc: " + pc + "; st: " + st);
     pedCallState.put(pc, st);
   }
 
@@ -334,7 +322,6 @@ public class IntersectionService extends AbstractService {
           .keepSynced(true)
           .open();
     }
-    //System.out.println("---------------nodeUri: " + Uri.EMPTY.withPath(nodeUri().getPath()));
   }
 
   public void unlinkLatency() {
@@ -345,7 +332,6 @@ public class IntersectionService extends AbstractService {
   }
 
   void didSetRemoteLatency(Value newValue) {
-    //System.out.println(nodeUri().toUri() + " didSetRemoteLatency: " + newValue.toRecon());
     latency.set(newValue);
   }
 

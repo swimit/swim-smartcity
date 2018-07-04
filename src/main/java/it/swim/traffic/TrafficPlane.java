@@ -1,18 +1,19 @@
 package it.swim.traffic;
 
+import it.swim.traffic.service.CityService;
+import it.swim.traffic.service.IntersectionService;
+import recon.Recon;
+import recon.Value;
 import swim.api.AbstractPlane;
 import swim.api.ServiceType;
 import swim.api.SwimRoute;
 import swim.api.SwimService;
-import recon.Recon;
-import recon.Value;
 import swim.server.PlaneDef;
 import swim.server.ServerDef;
 import swim.server.SwimPlane;
 import swim.server.SwimServer;
-import it.swim.traffic.service.CityService;
-import it.swim.traffic.service.IntersectionService;
 import swim.util.Decodee;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -61,14 +62,13 @@ public class TrafficPlane extends AbstractPlane {
     }
 
     final ServerDef serverDef = ServerDef.FORM.cast(configValue);
-    final PlaneDef planeDef = serverDef.getPlaneDef("traffic");
 
     final SwimServer server = new SwimServer();
     server.materialize(serverDef);
-    final SwimPlane planeContext = server.getPlane("traffic");
-    final TrafficPlane trafficPlane = (TrafficPlane)planeContext.getPlane();
 
+    final SwimPlane planeContext = server.getPlane("traffic");
     server.start();
+
     planeContext.command("/city/PaloAlto_CA_US", "wake", Value.ABSENT);
     System.out.println("Running TrafficPlane ...");
     server.run(); // blocks until termination

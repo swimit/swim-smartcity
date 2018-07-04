@@ -1,14 +1,11 @@
 package it.swim.traffic.service;
 
+import recon.Form;
+import recon.Value;
 import swim.api.AbstractService;
 import swim.api.JoinValueLane;
 import swim.api.MapDownlink;
-import swim.api.MapLane;
-import swim.api.SpatialLane;
 import swim.api.SwimLane;
-import recon.Form;
-import recon.Value;
-import swim.util.HashTrieMap;
 import swim.util.Uri;
 
 public class CityService extends AbstractService {

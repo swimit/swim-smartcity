@@ -1,10 +1,12 @@
-package it.swim.traffic.tensor;;
+package it.swim.traffic.tensor;
 
 import recon.Form;
 import recon.Item;
 import recon.Record;
 import recon.Value;
 import swim.util.Murmur3;
+
+;
 
 public final class TensorDims {
   public final int size;

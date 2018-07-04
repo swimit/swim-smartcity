@@ -1,8 +1,8 @@
 package it.swim.traffic.model;
 
+import recon.Form;
 import recon.Item;
 import recon.Number;
-import recon.Form;
 import recon.Record;
 import recon.Value;
 import swim.util.HashTrieMap;
