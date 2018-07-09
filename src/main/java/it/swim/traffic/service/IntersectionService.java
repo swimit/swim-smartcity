@@ -216,21 +216,32 @@ public class IntersectionService extends AbstractService {
     //System.out.println(nodeUri().toUri() + " didSetRemoteSchematic: " + newValue.toRecon());
     schematic.set(newValue);
   }
-
   public void linkScan() {
     if (scanLink == null) {
+      lastScanTime = System.currentTimeMillis();
       scanLink = downlink()
-          .hostUri(TRAFFIC_HOST_URI)
+          .hostUri(TRAFFIC_HOST)
           .nodeUri(Uri.EMPTY.withPath(nodeUri().getPath()))
           .laneUri("scan/state")
           .onEvent(this::didUpdateRemoteScan)
-          .open();
+          .open()
+          .didConnect(() -> {
+            System.out.println(nodeUri().toUri() + " Scan connect");
+          })
+          .didDisconnect(() -> {
+            System.out.println(nodeUri().toUri() + " Scan disconnect");
+          })
+          .didUnlink(() -> {
+            System.out.println(nodeUri().toUri() + " Scan unlink");
+          });
+
     }
   }
 
   public void unlinkScan() {
     if (scanLink != null) {
       scanLink.close();
+      System.out.println(nodeUri().toUri() + " Closing scan link");
       scanLink = null;
     }
   }
