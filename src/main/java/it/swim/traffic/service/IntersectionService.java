@@ -281,12 +281,13 @@ public class IntersectionService extends AbstractService {
       model = new SignalPhaseModel(p);
       signalPhaseModels = signalPhaseModels.updated(p, model);
     }
+    final long lag = System.currentTimeMillis() - clk;
     final boolean modelChanged = model.updateState(st, clk);
     if (modelChanged && model.hasCycled() && !ENABLED.contains(nodeUri())) {
       if (model.isPredictable()) {
-        final long t13 = model.nextRedToGreen();
-        final long t32 = model.nextGreenToYellow();
-        final long t21 = model.nextYellowToRed();
+        final long t13 = model.nextRedToGreen() + lag;
+        final long t32 = model.nextGreenToYellow() + lag;
+        final long t21 = model.nextYellowToRed() + lag;
         if (t13 < t32 && t13 < t21) {
           signalPhaseEvents.put(p, new SignalPhaseEvent(t13, 3));
         } else if (t32 < t21 && t32 < t13) {
